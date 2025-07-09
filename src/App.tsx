@@ -32,6 +32,7 @@ import StreamingHub from "./pages/StreamingHub";
 import Projects from "./pages/Projects";
 import Sites from "./pages/Sites";
 import Missions from "./pages/Missions";
+import Bruh from "./pages/bruh";
 import Flights from "./pages/Flights";
 import Cloud from "./pages/Cloud";
 import PeopleIcon from "@mui/icons-material/People";
@@ -102,6 +103,7 @@ function AppContent() {
             color="inherit"
             variant="outlined"
             sx={{ mr: 2, borderColor: "#000", color: "#000" }}
+            onClick={() => navigate("/bruh")}
           >
             + New Project
           </Button>
@@ -191,6 +193,7 @@ function AppContent() {
           <Route path="/missions" element={<Missions />} />
           <Route path="/flights" element={<Flights />} />
           <Route path="/cloud" element={<Cloud />} />
+          <Route path="/bruh" element={<Bruh />} />
         </Routes>
       </Box>
     </Box>
