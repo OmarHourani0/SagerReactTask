@@ -163,14 +163,7 @@ const ZonesMap = forwardRef<
       const features = draw ? (draw.getAll().features as Feature[]) : [];
       const newPolys = extractPolys(features);
       onPolygonsChange(newPolys);
-    });
-    // When a polygon is updated on the map, update state
-    // map.on("draw.update", () => {
-    //   const draw = getDraw(drawRef.current);
-    //   const features = draw ? (draw.getAll().features as Feature[]) : [];
-    //   const newPolys = extractPolys(features);
-    //   onPolygonsChange(newPolys);
-    // });
+    });    
   }
 
   // useImperativeHandle is a React hook that allows this child component to expose imperative methods

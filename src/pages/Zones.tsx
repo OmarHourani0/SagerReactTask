@@ -6,29 +6,6 @@ import ZoneTable from "../components/ZoneTable";
 import type { Zone } from "../types/Zone";
 import type { Polygon } from "../types/Polygon";
 
-// const ZONE_COLORS = [
-//   "#FFD600",
-//   "#00C853",
-//   "#0091EA",
-//   "#D50000",
-//   "#FF6D00",
-//   "#00B8D4",
-//   "#C51162",
-//   "#AEEA00",
-// ];
-
-// Defensive: Only keep zones with a matching polygon
-// function getValidZones(zones: Zone[], polygons: Polygon[]) {
-//   const polygonIds = new Set(polygons.map((p) => p.id));
-//   return zones.filter((z) => polygonIds.has(z.id));
-// }
-
-// // Defensive: Only keep polygons with a matching zone
-// function getValidPolygons(polygons: Polygon[], zones: Zone[]) {
-//   const zoneIds = new Set(zones.map((z) => z.id));
-//   return polygons.filter((p) => zoneIds.has(p.id));
-// }
-
 // Zones: main component for managing zones and polygons
 function Zones() {
   // Zones state: all metadata for each zone
