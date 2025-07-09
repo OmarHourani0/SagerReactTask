@@ -6,9 +6,12 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import type { Feature, Polygon as GeoPolygon } from "geojson";
 import { Box } from "@mui/material";
-import type { Polygon } from "../types/Polygon";
-import type { Zone } from "../types/Zone";
-import { calculateArea } from "../helpers/area";
+import type { Polygon } from "../../types/Polygon";
+import type { Zone } from "../../types/Zone";
+import { calculateArea } from "../../helpers/area";
+import { extractPolys, getDraw } from "./drawHandlers";
+import { addMapControls } from "./mapControls";
+import { getRandomColor } from "../../helpers/randomColor";
 
 // Mapbox public access token (required for map)
 const MAPBOX_TOKEN =
@@ -24,22 +27,7 @@ export type ZonesMapHandle = {
   setPolygonColorById: (id: string, color: string) => void;
 };
 
-function getDraw(ref: unknown): InstanceType<typeof MapboxDraw> | null {
-  return ref && typeof ref === "object" && "getAll" in ref
-    ? (ref as InstanceType<typeof MapboxDraw>)
-    : null;
-}
 
-const DEFAULT_COLORS = [
-  "#FFD600",
-  "#00C853",
-  "#0091EA",
-  "#D50000",
-  "#FF6D00",
-  "#00B8D4",
-  "#C51162",
-  "#AEEA00",
-];
 
 const ZonesMap = forwardRef<
   ZonesMapHandle,
@@ -49,7 +37,7 @@ const ZonesMap = forwardRef<
     onPolygonsChange: (newPolygons: Polygon[]) => void;
     onAreasUpdate: (areas: Record<string, number>) => void;
   }
->(function ZonesMap({ polygons, zones, onPolygonsChange, onAreasUpdate }, ref) {
+>(({ polygons, zones, onPolygonsChange, onAreasUpdate }, ref) => {
   // Mapbox map and draw control refs
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const drawRef = useRef<unknown>(null);
@@ -59,13 +47,6 @@ const ZonesMap = forwardRef<
   const safePolygons = Array.isArray(polygons)
     ? polygons.filter((p) => p && typeof p.id === "string" && zoneIds.has(p.id))
     : [];
-
-  // Helper to get color for a polygon
-  function getColor(idx: number) {
-    return (
-      safePolygons[idx]?.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length]
-    );
-  }
 
   // MapboxDraw and map event logic
   function onMapLoad(e: { target: mapboxgl.Map }) {
@@ -90,7 +71,7 @@ const ZonesMap = forwardRef<
           type: "fill",
           filter: ["all", ["==", "$type", "Polygon"]],
           paint: {
-            "fill-color": ["get", "color"],
+            "fill-color": getRandomColor(),
             "fill-opacity": 0.4,
           },
         },
@@ -106,16 +87,17 @@ const ZonesMap = forwardRef<
       ],
     });
     map.addControl(draw);
+    addMapControls(map);
     drawRef.current = draw as unknown;
     // Load existing polygons from state, with color styling as feature property
     if (safePolygons.length > 0) {
-      safePolygons.forEach((poly, idx) => {
+      safePolygons.forEach((poly) => {
         if (poly.coordinates.length >= 3) {
           const feature = {
             id: poly.id,
             type: "Feature",
             properties: {
-              color: poly.color || getColor(idx),
+              color: poly.color,
             },
             geometry: {
               type: "Polygon",
@@ -123,52 +105,29 @@ const ZonesMap = forwardRef<
             },
           };
           const [id] = draw.add(feature);
-          draw.setFeatureProperty(id, "color", poly.color || getColor(idx));
+          draw.setFeatureProperty(id, "color", poly.color);
         }
       });
-    }
-    // Extract polygons from MapboxDraw features (for state sync)
-    function extractPolys(features: Feature[]): Polygon[] {
-      return features
-        .filter((f) => f.geometry.type === "Polygon")
-        .map((f, idx) => {
-          const coords = (f.geometry as GeoPolygon).coordinates[0].slice(0, -1);
-          const coordinates = coords.filter(
-            (pt): pt is [number, number] =>
-              Array.isArray(pt) &&
-              pt.length === 2 &&
-              typeof pt[0] === "number" &&
-              typeof pt[1] === "number"
-          );
-          return {
-            id: String(f.id),
-            coordinates,
-            color:
-              f.properties && typeof f.properties.color === "string"
-                ? f.properties.color
-                : getColor(idx),
-          };
-        });
     }
     // When a polygon is created, use MapboxDraw's ID as our main ID
     map.on("draw.create", () => {
       const draw = getDraw(drawRef.current);
       const features = draw ? (draw.getAll().features as Feature[]) : [];
-      const newPolys = extractPolys(features);
+      const newPolys = extractPolys(features, safePolygons);
       onPolygonsChange(newPolys);
     });
     // When a polygon is deleted on the map, update state
     map.on("draw.delete", () => {
       const draw = getDraw(drawRef.current);
       const features = draw ? (draw.getAll().features as Feature[]) : [];
-      const newPolys = extractPolys(features);
+      const newPolys = extractPolys(features, safePolygons);
       onPolygonsChange(newPolys);
-    });    
+    });
   }
 
   // useImperativeHandle is a React hook that allows this child component to expose imperative methods
   // (like deletePolygonById, getAreasById, setPolygonColorById) to its parent via a ref.
-  // This is necessary when the parent needs to call functions on the child directly 
+  // This is necessary when the parent needs to call functions on the child directly
   // (e.g., to delete a polygon from outside the map component).
   // It should be used sparingly and only when parent-to-child imperative control is required.
   useImperativeHandle(ref, () => ({

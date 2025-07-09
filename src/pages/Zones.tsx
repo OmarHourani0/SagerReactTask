@@ -1,13 +1,14 @@
-import { useState, useRef, useCallback } from "react";
-import { Box } from "@mui/material";
-import ZonesMap from "../components/ZonesMap";
-import type { ZonesMapHandle } from "../components/ZonesMap";
-import ZoneTable from "../components/ZoneTable";
+import { useState, useRef } from "react";
+import { Box, Button } from "@mui/material";
+import ZonesMap from "../components/ZonesMap/ZonesMap";
+import type { ZonesMapHandle } from "../components/ZonesMap/ZonesMap";
+import ZoneTable from "../components/ZoneTable/ZoneTable";
 import type { Zone } from "../types/Zone";
 import type { Polygon } from "../types/Polygon";
+import { getRandomColor } from "../helpers/randomColor";
 
 // Zones: main component for managing zones and polygons
-function Zones() {
+const Zones = () => {
   // Zones state: all metadata for each zone
   const [zones, setZones] = useState<Zone[]>(() => {
     const stored = localStorage.getItem("zones");
@@ -19,39 +20,22 @@ function Zones() {
     return stored ? JSON.parse(stored) : [];
   });
 
+  const [mapKey, setMapKey] = useState(0); // for forcing rerender
   const zonesMapRef = useRef<ZonesMapHandle>(null);
 
-  // Handler for zone metadata changes (name, type, color, etc.)
-  const handleZoneChange = useCallback(
-    (id: string, field: keyof Zone, value: string) => {
-      setZones((prevZones) => {
-        const newZones = prevZones.map((z) =>
-          z.id === id ? { ...z, [field]: value } : z
-        );
-        localStorage.setItem("zones", JSON.stringify(newZones));
-        return newZones;
-      });
-      if (field === "color") {
-        setPolygons((prevPolys) => {
-          const newPolys = prevPolys.map((p) =>
-            p.id === id ? { ...p, color: value } : p
-          );
-          localStorage.setItem("polygons", JSON.stringify(newPolys));
-          return newPolys;
-        });
-        if (
-          zonesMapRef.current &&
-          typeof zonesMapRef.current.setPolygonColorById === "function"
-        ) {
-          zonesMapRef.current.setPolygonColorById(id, value);
-        }
-      }
-    },
-    []
-  );
+  // Handler for zone metadata changes (name, type, parameters, etc.)
+  const handleZoneChange = (id: string, field: keyof Zone, value: string) => {
+    setZones((prevZones) => {
+      const newZones = prevZones.map((z) =>
+        z.id === id ? { ...z, [field]: value } : z
+      );
+      localStorage.setItem("zones", JSON.stringify(newZones));
+      return newZones;
+    });
+  };
 
   // Handler for deleting a zone and its polygon
-  const handleDelete = useCallback((id: string) => {
+  const handleDelete = (id: string) => {
     zonesMapRef.current?.deletePolygonById(id);
     setPolygons((prevPolys) => {
       const newPolys = prevPolys.filter((p) => p.id !== id);
@@ -63,15 +47,14 @@ function Zones() {
       localStorage.setItem("zones", JSON.stringify(newZones));
       return newZones;
     });
-  }, []);
+  };
 
   // Handler for polygon changes from ZonesMap
-  const handlePolygonsChange = useCallback((newPolygons: Polygon[]) => {
+  const handlePolygonsChange = (newPolygons: Polygon[]) => {
     setPolygons(newPolygons);
     localStorage.setItem("polygons", JSON.stringify(newPolygons));
     setZones((prevZones) => {
       const polygonIds = new Set(newPolygons.map((p) => p.id));
-      // Remove zones whose polygon no longer exists
       const updatedZones = prevZones.filter((z) => polygonIds.has(z.id));
       const zoneIds = new Set(updatedZones.map((z) => z.id));
       const newZonesToAdd = newPolygons
@@ -80,7 +63,7 @@ function Zones() {
           id: poly.id,
           name: "",
           type: "",
-          color: poly.color || "#FFD600",
+          color: getRandomColor(),
           area: "0.00",
           parameters: "",
           polygon: poly.coordinates,
@@ -97,10 +80,10 @@ function Zones() {
     ) {
       zonesMapRef.current.getAreasById();
     }
-  }, []);
+  };
 
   // Handler for area updates from ZonesMap
-  const handleAreasUpdate = useCallback((areas: Record<string, number>) => {
+  const handleAreasUpdate = (areas: Record<string, number>) => {
     setZones((prevZones) => {
       const updatedZones = prevZones.map((z) => ({
         ...z,
@@ -109,7 +92,7 @@ function Zones() {
       localStorage.setItem("zones", JSON.stringify(updatedZones));
       return updatedZones;
     });
-  }, []);
+  };
 
   return (
     <Box
@@ -149,16 +132,26 @@ function Zones() {
           polygons={polygons}
           onZoneChange={handleZoneChange}
           onDelete={handleDelete}
-          onColorChange={(id, color) => {
-            // update internal state
-            handleZoneChange(id, "color", color);
-            // apply to map
-            zonesMapRef.current?.setPolygonColorById(id, color);
-          }}
         />
       </Box>
-      <Box sx={{ flex: 1, height: "100%", minWidth: 0 }}>
+      <Box
+        sx={{
+          flex: 1,
+          height: "100%",
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Button
+          variant="outlined"
+          sx={{ mb: 2 }}
+          onClick={() => setMapKey((k) => k + 1)}
+        >
+          Refresh Map for new Change Colour
+        </Button>
         <ZonesMap
+          key={mapKey}
           ref={zonesMapRef}
           polygons={polygons}
           zones={zones}
@@ -168,6 +161,6 @@ function Zones() {
       </Box>
     </Box>
   );
-}
+};
 
 export default Zones;

@@ -3,7 +3,7 @@ import { useState as useReactState } from "react";
 import Zones from "./Zones";
 
 export default function Sites() {
-  const [tab, setTab] = useReactState(0);
+  const [tab, setTab] = useReactState(4);
   const tabLabels = [
     "Site Main Information",
     "Dashboard",
