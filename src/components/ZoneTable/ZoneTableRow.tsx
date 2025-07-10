@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import type { Zone } from "../../types/Zone";
+// import { useState } from "react";
 
 interface ZoneTableRowProps {
   zone: Zone;
@@ -23,6 +24,21 @@ const ZoneTableRow = ({
   ZONE_TYPES,
 }: ZoneTableRowProps) => (
   <TableRow sx={{ borderBottom: "1px solid #F0F0F0" }}>
+    <TableCell>
+      <input
+        type="color"
+        value={zone.color || "#3bb2d0"}
+        onChange={(e) => onZoneChange(zone.id, "color", e.target.value)}
+        style={{
+          width: 32,
+          height: 32,
+          border: "none",
+          background: "none",
+          cursor: "pointer",
+        }}
+        title="Pick zone color"
+      />
+    </TableCell>
     <TableCell>
       <TextField
         variant="outlined"

@@ -23,8 +23,8 @@ export const extractPolys = (features: Feature[], safePolygons: Polygon[]) =>
         id: String(f.id),
         coordinates,
         color:
-          f.properties && typeof f.properties.color === "string"
-            ? f.properties.color
+          f.properties && typeof f.properties.user_portColor === "string"
+            ? f.properties.user_portColor
             : safePolygons[idx]?.color,
       };
     }); 

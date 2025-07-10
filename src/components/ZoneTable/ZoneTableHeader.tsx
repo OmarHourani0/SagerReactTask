@@ -2,7 +2,7 @@ import { TableRow, TableCell } from "@mui/material";
 
 const ZoneTableHeader = () => (
   <TableRow sx={{ bgcolor: "#F4F5F7" }}>
-    {/* <TableCell
+    <TableCell
       sx={{
         color: "#888",
         fontWeight: 600,
@@ -11,7 +11,7 @@ const ZoneTableHeader = () => (
       }}
     >
       Color
-    </TableCell> */}
+    </TableCell>
     <TableCell
       sx={{
         color: "#888",
