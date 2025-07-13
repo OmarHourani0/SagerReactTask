@@ -1,11 +1,31 @@
 import { useState, useRef } from "react";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import ZonesMap from "../components/ZonesMap/ZonesMap";
 import type { ZonesMapHandle } from "../components/ZonesMap/ZonesMap";
 import ZoneTable from "../components/ZoneTable/ZoneTable";
 import type { Zone } from "../types/Zone";
 import type { Polygon } from "../types/Polygon";
 import { getRandomColor } from "../helpers/randomColor";
+
+// Helper to calculate perimeter of a polygon
+const calculatePerimeter = (coordinates: [number, number][]): number => {
+  if (!coordinates || coordinates.length < 2) return 0;
+  let perimeter = 0;
+  for (let i = 0; i < coordinates.length - 1; i++) {
+    const [x1, y1] = coordinates[i];
+    const [x2, y2] = coordinates[i + 1];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    perimeter += Math.sqrt(dx * dx + dy * dy) * 111319.9; // rough meters per degree
+  }
+  // Close the polygon
+  const [x1, y1] = coordinates[coordinates.length - 1];
+  const [x2, y2] = coordinates[0];
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  perimeter += Math.sqrt(dx * dx + dy * dy) * 111319.9;
+  return perimeter;
+};
 
 // Zones: main component for managing zones and polygons
 const Zones = () => {
@@ -20,10 +40,10 @@ const Zones = () => {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const [mapKey, setMapKey] = useState(0); // for forcing rerender
+  const [mapKey] = useState(0); // for forcing rerender
   const zonesMapRef = useRef<ZonesMapHandle>(null);
 
-  // Handler for zone metadata changes (name, type, parameters, etc.)
+  // Handler for zone metadata changes (name, type, perimeter, etc.)
   const handleZoneChange = (id: string, field: keyof Zone, value: string) => {
     setZones((prevZones) => {
       const newZones = prevZones.map((z) =>
@@ -65,7 +85,7 @@ const Zones = () => {
           type: "",
           color: getRandomColor(),
           area: "0.00",
-          parameters: "",
+          perimeter: "0.00",
           polygon: poly.coordinates,
         }));
       const allZones = [...updatedZones, ...newZonesToAdd];
@@ -85,10 +105,15 @@ const Zones = () => {
   // Handler for area updates from ZonesMap
   const handleAreasUpdate = (areas: Record<string, number>) => {
     setZones((prevZones) => {
-      const updatedZones = prevZones.map((z) => ({
-        ...z,
-        area: typeof areas[z.id] === "number" ? areas[z.id].toFixed(2) : "0.00",
-      }));
+      const updatedZones = prevZones.map((z) => {
+        const perimeter = calculatePerimeter(z.polygon).toFixed(2);
+        return {
+          ...z,
+          area:
+            typeof areas[z.id] === "number" ? areas[z.id].toFixed(2) : "0.00",
+          perimeter,
+        };
+      });
       localStorage.setItem("zones", JSON.stringify(updatedZones));
       return updatedZones;
     });
@@ -143,13 +168,6 @@ const Zones = () => {
           flexDirection: "column",
         }}
       >
-        <Button
-          variant="outlined"
-          sx={{ mb: 2 }}
-          onClick={() => setMapKey((k) => k + 1)}
-        >
-          Refresh Map for new Change Colour
-        </Button>
         <ZonesMap
           key={mapKey}
           ref={zonesMapRef}

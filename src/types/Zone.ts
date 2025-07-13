@@ -4,6 +4,6 @@ export type Zone = {
   type: string;
   color: string;
   area: string;
-  parameters: string;
+  perimeter: string;
   polygon: [number, number][];
 }; 

@@ -50,7 +50,7 @@ const ZoneTableHeader = () => (
         borderBottom: "1px solid #E0E0E0",
       }}
     >
-      Parameters
+      Perimeter
     </TableCell>
     <TableCell
       sx={{

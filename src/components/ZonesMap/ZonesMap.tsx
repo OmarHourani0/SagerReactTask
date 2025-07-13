@@ -11,6 +11,7 @@ import type { Zone } from "../../types/Zone";
 import { calculateArea } from "../../helpers/area";
 import { extractPolys, getDraw } from "./drawHandlers";
 import { addMapControls } from "./mapControls";
+import { getDrawOptions } from "./mapDrawConfig";
 
 // Mapbox public access token (required for map)
 const MAPBOX_TOKEN =
@@ -51,320 +52,10 @@ const ZonesMap = forwardRef<
     const map = e.target;
     mapRef.current = map;
     if (drawRef.current) return;
-    const draw = new MapboxDraw({
-      // userProperties: true,
-      // controls: {
-      //   polygon: true,
-      //   trash: true,
-      //   point: false,
-      //   rectangle: false,
-      //   polyline: false,
-      //   combine_features: false,
-      //   uncombine_features: false,
-      // },
-
-      userProperties: true,
-      controls: {
-        combine_features: false,
-        uncombine_features: false,
-      },
-      styles: [
-        // default themes provided by MB Draw
-        // default themes provided by MB Draw
-        // default themes provided by MB Draw
-        // default themes provided by MB Draw
-
-        {
-          id: "gl-draw-polygon-fill-inactive",
-          type: "fill",
-          filter: [
-            "all",
-            ["==", "active", "false"],
-            ["==", "$type", "Polygon"],
-            ["!=", "mode", "static"],
-          ],
-          paint: {
-            "fill-color": "#3bb2d0",
-            "fill-outline-color": "#3bb2d0",
-            "fill-opacity": 0.1,
-          },
-        },
-        {
-          id: "gl-draw-polygon-fill-active",
-          type: "fill",
-          filter: ["all", ["==", "active", "true"], ["==", "$type", "Polygon"]],
-          paint: {
-            "fill-color": "#fbb03b",
-            "fill-outline-color": "#fbb03b",
-            "fill-opacity": 0.1,
-          },
-        },
-        {
-          id: "gl-draw-polygon-midpoint",
-          type: "circle",
-          filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
-          paint: {
-            "circle-radius": 3,
-            "circle-color": "#fbb03b",
-          },
-        },
-        {
-          id: "gl-draw-polygon-stroke-inactive",
-          type: "line",
-          filter: [
-            "all",
-            ["==", "active", "false"],
-            ["==", "$type", "Polygon"],
-            ["!=", "mode", "static"],
-          ],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#3bb2d0",
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-polygon-stroke-active",
-          type: "line",
-          filter: ["all", ["==", "active", "true"], ["==", "$type", "Polygon"]],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#fbb03b",
-            "line-dasharray": [0.2, 2],
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-line-inactive",
-          type: "line",
-          filter: [
-            "all",
-            ["==", "active", "false"],
-            ["==", "$type", "LineString"],
-            ["!=", "mode", "static"],
-          ],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#3bb2d0",
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-line-active",
-          type: "line",
-          filter: [
-            "all",
-            ["==", "$type", "LineString"],
-            ["==", "active", "true"],
-          ],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#fbb03b",
-            "line-dasharray": [0.2, 2],
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-polygon-and-line-vertex-stroke-inactive",
-          type: "circle",
-          filter: [
-            "all",
-            ["==", "meta", "vertex"],
-            ["==", "$type", "Point"],
-            ["!=", "mode", "static"],
-          ],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#fff",
-          },
-        },
-        {
-          id: "gl-draw-polygon-and-line-vertex-inactive",
-          type: "circle",
-          filter: [
-            "all",
-            ["==", "meta", "vertex"],
-            ["==", "$type", "Point"],
-            ["!=", "mode", "static"],
-          ],
-          paint: {
-            "circle-radius": 3,
-            "circle-color": "#fbb03b",
-          },
-        },
-        {
-          id: "gl-draw-point-point-stroke-inactive",
-          type: "circle",
-          filter: [
-            "all",
-            ["==", "active", "false"],
-            ["==", "$type", "Point"],
-            ["==", "meta", "feature"],
-            ["!=", "mode", "static"],
-          ],
-          paint: {
-            "circle-radius": 5,
-            "circle-opacity": 1,
-            "circle-color": "#fff",
-          },
-        },
-        {
-          id: "gl-draw-point-inactive",
-          type: "circle",
-          filter: [
-            "all",
-            ["==", "active", "false"],
-            ["==", "$type", "Point"],
-            ["==", "meta", "feature"],
-            ["!=", "mode", "static"],
-          ],
-          paint: {
-            "circle-radius": 3,
-            "circle-color": "#3bb2d0",
-          },
-        },
-        {
-          id: "gl-draw-point-stroke-active",
-          type: "circle",
-          filter: [
-            "all",
-            ["==", "$type", "Point"],
-            ["==", "active", "true"],
-            ["!=", "meta", "midpoint"],
-          ],
-          paint: {
-            "circle-radius": 7,
-            "circle-color": "#fff",
-          },
-        },
-        {
-          id: "gl-draw-point-active",
-          type: "circle",
-          filter: [
-            "all",
-            ["==", "$type", "Point"],
-            ["!=", "meta", "midpoint"],
-            ["==", "active", "true"],
-          ],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#fbb03b",
-          },
-        },
-        {
-          id: "gl-draw-polygon-fill-static",
-          type: "fill",
-          filter: ["all", ["==", "mode", "static"], ["==", "$type", "Polygon"]],
-          paint: {
-            "fill-color": "#404040",
-            "fill-outline-color": "#404040",
-            "fill-opacity": 0.1,
-          },
-        },
-        {
-          id: "gl-draw-polygon-stroke-static",
-          type: "line",
-          filter: ["all", ["==", "mode", "static"], ["==", "$type", "Polygon"]],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#404040",
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-line-static",
-          type: "line",
-          filter: [
-            "all",
-            ["==", "mode", "static"],
-            ["==", "$type", "LineString"],
-          ],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#404040",
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-point-static",
-          type: "circle",
-          filter: ["all", ["==", "mode", "static"], ["==", "$type", "Point"]],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#404040",
-          },
-        },
-
-        // end default themes provided by MB Draw
-        // end default themes provided by MB Draw
-        // end default themes provided by MB Draw
-        // end default themes provided by MB Draw
-
-        // new styles for toggling colors
-        // new styles for toggling colors
-        // new styles for toggling colors
-        // new styles for toggling colors
-
-        {
-          id: "gl-draw-polygon-color-picker",
-          type: "fill",
-          filter: [
-            "all",
-            ["==", "$type", "Polygon"],
-            ["has", "user_portColor"],
-          ],
-          paint: {
-            "fill-color": ["get", "user_portColor"],
-            "fill-outline-color": ["get", "user_portColor"],
-            "fill-opacity": 0.5,
-          },
-        },
-        {
-          id: "gl-draw-line-color-picker",
-          type: "line",
-          filter: [
-            "all",
-            ["==", "$type", "LineString"],
-            ["has", "user_portColor"],
-          ],
-          paint: {
-            "line-color": ["get", "user_portColor"],
-            "line-width": 2,
-          },
-        },
-        {
-          id: "gl-draw-point-color-picker",
-          type: "circle",
-          filter: ["all", ["==", "$type", "Point"], ["has", "user_portColor"]],
-          paint: {
-            "circle-radius": 3,
-            "circle-color": ["get", "user_portColor"],
-          },
-        },
-      ],
-    });
-    map.addControl(draw, "top-left");
+    // Use externalized MapboxDraw config
+    const draw = new MapboxDraw(getDrawOptions());
+    map.addControl(draw);
     addMapControls(map);
-
-    // Add color change handler
     drawRef.current = draw as unknown;
     // Load existing polygons from state, with color styling as feature property
     if (safePolygons.length > 0) {
@@ -382,11 +73,7 @@ const ZonesMap = forwardRef<
             },
           };
           const [id] = draw.add(feature);
-          draw.setFeatureProperty(
-            id,
-            "user_portColor",
-            poly.color || "#3bb2d0"
-          );
+          draw.setFeatureProperty(id, "portColor", poly.color || "#3bb2d0");
         }
       });
     }
@@ -469,16 +156,13 @@ const ZonesMap = forwardRef<
       const draw = getDraw(drawRef.current);
       if (draw) {
         try {
-          draw.setFeatureProperty(id, "user_portColor", color);
+          draw.setFeatureProperty(id, "portColor", color);
         } catch {
           // fallback: remove and re-add if setFeatureProperty is not supported
           const feature = draw.get(id);
           if (feature) {
             draw.delete(id);
-            feature.properties = {
-              ...feature.properties,
-              user_portColor: color,
-            };
+            feature.properties = { ...feature.properties, portColor: color };
             draw.add(feature);
           }
         }
@@ -493,19 +177,15 @@ const ZonesMap = forwardRef<
     if (!draw) return;
     zones.forEach((zone) => {
       if (zone.id && zone.color) {
-        try {
-          draw.setFeatureProperty(zone.id, "user_portColor", zone.color);
-        } catch {
-          // fallback: remove and re-add if setFeatureProperty is not supported
-          const feature = draw.get(zone.id);
-          if (feature) {
-            draw.delete(zone.id);
-            feature.properties = {
-              ...feature.properties,
-              user_portColor: zone.color,
-            };
-            draw.add(feature);
-          }
+        const feature = draw.get(zone.id);
+        if (feature) {
+          draw.delete(zone.id);
+          feature.properties = {
+            ...feature.properties,
+            user_portColor: zone.color,
+            portColor: zone.color,
+          };
+          draw.add(feature);
         }
       }
     });

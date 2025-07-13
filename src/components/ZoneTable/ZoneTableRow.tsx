@@ -76,22 +76,7 @@ const ZoneTableRow = ({
       </Select>
     </TableCell>
     <TableCell>{Number(zone.area || 0).toFixed(2)} m²</TableCell>
-    <TableCell>
-      <TextField
-        variant="outlined"
-        value={zone.parameters}
-        onChange={(e) => onZoneChange(zone.id, "parameters", e.target.value)}
-        InputProps={{
-          sx: {
-            fontWeight: 500,
-            fontSize: 15,
-            bgcolor: "#F9FAFB",
-            borderRadius: 1,
-          },
-        }}
-        sx={{ width: 120 }}
-      />
-    </TableCell>
+    <TableCell>{Number(zone.perimeter || 0).toFixed(2)} m</TableCell>
     <TableCell>
       <IconButton onClick={() => onDelete(zone.id)}>
         <DeleteIcon sx={{ color: "#D50000" }} />
